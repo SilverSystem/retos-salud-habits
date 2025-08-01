@@ -1,0 +1,42 @@
+services:
+
+  capi-api:
+    depends_on:
+        - capi-db
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - ${BACKEND_PORT}:8000
+    volumes:
+      - ./src:/app/src
+    env_file:
+      - .env
+    environment:
+      PORT: ${BACKEND_PORT}
+      DB_HOST: capi-db
+    networks:
+      - capi_public_network
+      - capi_private_network
+
+  capi-db:
+    image: mongo:8.0-noble
+    ports:
+      - ${DB_PORT}:27017
+    environment:
+      MONGO_USERNAME: ${MONGO_USERNAME}
+      MONGO_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DB_NAME}
+    volumes:
+      - alto_db_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
+    networks:
+      - capi_private_network
+
+
+networks:
+  capi_public_network:
+  capi_private_network:
+
+volumes:
+  capi_db_data:
