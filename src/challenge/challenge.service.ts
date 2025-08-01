@@ -1,10 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { CreateChallengeDto } from './dto/create-challenge.dto';
-import { UpdateChallengeDto } from './dto/update-challenge.dto';
 
 @Injectable()
 export class ChallengeService {
-  create(createChallengeDto: CreateChallengeDto) {
+  create(createChallengeDto) {
     return 'This action adds a new challenge';
   }
 
@@ -16,7 +14,7 @@ export class ChallengeService {
     return `This action returns a #${id} challenge`;
   }
 
-  update(id: number, updateChallengeDto: UpdateChallengeDto) {
+  update(id: number, updateChallengeDto) {
     return `This action updates a #${id} challenge`;
   }
 
