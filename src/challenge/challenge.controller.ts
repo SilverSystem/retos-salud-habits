@@ -1,14 +1,10 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { ChallengeService } from './challenge.service';
-
+import {CreateUserChallengeDto} from '../dtos/create-user-challenge.dto';
+import { CreateChallengeDto } from '../dtos/create-challenge.dto';
 @Controller('challenge')
 export class ChallengeController {
   constructor(private readonly challengeService: ChallengeService) {}
-
-  @Post()
-  create(@Body() createChallengeDto) {
-    return this.challengeService.create(createChallengeDto);
-  }
 
   @Get()
   findAll() {
@@ -18,6 +14,15 @@ export class ChallengeController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.challengeService.findOne(+id);
+  }
+
+  @Post()
+  async create(@Body() challenge: CreateChallengeDto) {
+    return await this.challengeService.create(challenge);
+  }
+  @Post('user-challenge')
+  createUserChallenge(@Body() userChallenge: CreateUserChallengeDto) {
+    return this.challengeService.createUserChallenge(userChallenge);
   }
 
   @Patch(':id')

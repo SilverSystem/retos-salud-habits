@@ -1,13 +1,36 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService} from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ChallengeModule } from './challenge/challenge.module';
 import { UserModule } from './user/user.module';
-
+import { HealthMetricModule } from './health-metric/health-metric.module';
+import { BullModule } from '@nestjs/bullmq';
+import { HealthMetricWorker } from './queues/health-metric.worker';
 @Module({
   imports: [
-    MongooseModule.forRoot(`mongodb://${process.env.MONGO_USERNAME}:${process.env.MONGO_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}`),
+    ConfigModule.forRoot({isGlobal: true}),
+    BullModule.forRootAsync({
+      useFactory: (configService: ConfigService) => ({
+        connection: {
+          host: configService.get('REDIS_HOST') ?? 'localhost',
+          port: parseInt(configService.get('REDIS_PORT') ?? '6379', 10),
+        },
+      }),
+      inject: [ConfigService],
+    }),
+    BullModule.registerQueue({
+      name: 'health-metric-queue',
+    }),
+    MongooseModule.forRootAsync({
+      useFactory: (configService: ConfigService) => ({
+        uri: `mongodb://${configService.get('MONGO_USERNAME')}:${configService.get('MONGO_PASSWORD')}@${configService.get('DB_HOST')}:${configService.get('DB_PORT')}`,
+      }),
+      inject: [ConfigService],
+    }),
     ChallengeModule,
     UserModule,
+    HealthMetricModule,
   ],
+  providers: [HealthMetricWorker],
 })
 export class AppModule {}
