@@ -6,6 +6,10 @@ import { UserModule } from './user/user.module';
 import { HealthMetricModule } from './health-metric/health-metric.module';
 import { BullModule } from '@nestjs/bullmq';
 import { HealthMetricWorker } from './queues/health-metric.worker';
+import { Challenge, ChallengeSchema } from './models/challenge.schema';
+import { HealthMetric, HealthMetricSchema } from './models/healthMetric.schema';
+import { User, UserSchema } from './models/user.schema';
+import { UserChallenge, UserChallengeSchema } from './models/userChallenge.schema';
 @Module({
   imports: [
     ConfigModule.forRoot({isGlobal: true}),
@@ -27,6 +31,12 @@ import { HealthMetricWorker } from './queues/health-metric.worker';
       }),
       inject: [ConfigService],
     }),
+    MongooseModule.forFeature([
+      { name: UserChallenge.name, schema: UserChallengeSchema },
+      { name: Challenge.name, schema: ChallengeSchema },
+      { name: User.name, schema: UserSchema },
+      { name: HealthMetric.name, schema: HealthMetricSchema },
+    ]),
     ChallengeModule,
     UserModule,
     HealthMetricModule,

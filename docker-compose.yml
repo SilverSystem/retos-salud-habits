@@ -8,14 +8,17 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - ${BACKEND_PORT}:8000
+      - ${BACKEND_PORT}:3000
     volumes:
       - ./src:/app/src
     environment:
       PORT: ${BACKEND_PORT}
       DB_HOST: capi-db
+      DB_PORT: ${DB_PORT}
       REDIS_HOST: redis
       REDIS_PORT: ${REDIS_PORT}
+      MONGO_USERNAME: ${MONGO_USERNAME}
+      MONGO_PASSWORD: ${MONGO_PASSWORD}
     networks:
       - capi_public_network
       - capi_private_network
@@ -35,11 +38,11 @@ services:
     ports:
       - ${DB_PORT}:27017
     environment:
-      MONGO_USERNAME: ${MONGO_USERNAME}
-      MONGO_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
       MONGO_INITDB_DATABASE: ${MONGO_DB_NAME}
     volumes:
-      - alto_db_data:/data/db
+      - capi_db_data:/data/db
       - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
     networks:
       - capi_private_network

@@ -7,18 +7,18 @@ export class HealthMetricService {
   }
 
   findAll() {
-    return `This action returns all healthMetric`;
+    return `This action returns all healthMetrics`;
   }
 
-  findOne(id: number) {
+  findOne(id: string) {
     return `This action returns a #${id} healthMetric`;
   }
 
-  update(id: number, updateHealthMetricDto) {
+  update(id: string, updateHealthMetricDto) {
     return `This action updates a #${id} healthMetric`;
   }
 
-  remove(id: number) {
+  remove(id: string) {
     return `This action removes a #${id} healthMetric`;
   }
 }

@@ -11,7 +11,6 @@ async function bootstrap() {
     .setTitle('Gestion de retos de salud API')
     .setDescription('La API para gestionar retos de salud')
     .setVersion('1.0')
-    .addTag('retos')
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);

@@ -1,6 +1,6 @@
 import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import { HealthMetricType } from 'src/models/healthMetric.schema';
+import { HealthMetricType } from '../models/healthMetric.schema';
 
 export enum ChallengeType{
   ACCUMULATIVE = 'accumulative',
@@ -21,10 +21,29 @@ export class Challenge extends Document {
   endDate: Date;
 
   @Prop({ required: true })
-  goal: number; // La meta total para completar el reto
+  goal: number;
 
   @Prop({ enum: ChallengeType, required: true })
-  goalType: ChallengeType; // Tipo de métrica para la meta del reto
+  goalType: ChallengeType;
+
+  @Prop()
+  dailyGoal?: number;
+
+  @Prop()
+  requiredDays?: number;
 }
 
 export const ChallengeSchema = SchemaFactory.createForClass(Challenge);
+
+ChallengeSchema.pre('validate', function (next) {
+  if (this.goalType === 'daily') {
+    if (this.dailyGoal == null || this.requiredDays == null) {
+      return next(
+        new Error(
+          'dailyGoal and requiredDays are required for daily challenges.'
+        )
+      );
+    }
+  }
+  next();
+});

@@ -14,8 +14,7 @@ import { Queue } from 'bullmq';
 @Injectable()
 export class HealthMetricThrottleInterceptor implements NestInterceptor {
   constructor(
-    @InjectQueue('health-metric-queue')
-    private readonly queue: Queue,
+    @InjectQueue('health-metric-queue') private readonly queue: Queue,
   ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
