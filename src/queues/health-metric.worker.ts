@@ -15,16 +15,21 @@ export class HealthMetricWorker extends WorkerHost {
   }
 
   async process(job: Job<any>): Promise<void> {
-    const { userId, type, date, value } = job.data;
+    try {
+      const { userId, type, date, value } = job.data;
 
-    const existing = await this.healthMetricModel.findOne({ userId, type, date });
+      const existing = await this.healthMetricModel.findOne({ userId, type, date });
 
-    if (existing) {
-      existing.value += value;
-      await existing.save();
-    } else {
-      await this.healthMetricModel.create({ userId, type, date, value });
+      if (existing) {
+        existing.value += value;
+        await existing.save();
+      } else {
+        await this.healthMetricModel.create({ userId, type, date, value });
+      }
+      await this.challengeService.updateUserChallenge({ userId, type, date, value });
+    } catch (error) {
+        console.error(`Error procesando job ${job.id}`, error);
+        throw error; 
     }
-    await this.challengeService.updateUserChallenge({ userId, type, date, value });
   }
 }

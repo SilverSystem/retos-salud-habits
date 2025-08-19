@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, NotFoundException, HttpException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, HttpException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import {CreateUserChallengeDto} from '../dtos/create-user-challenge.dto';
@@ -107,59 +107,100 @@ export class ChallengeService {
 
 
   async updateUserChallenge(updateUserChallengeMetrics: CreateHealthMetricDto) {
-    const { userId, value } = updateUserChallengeMetrics;
+    const { userId, type, date} = updateUserChallengeMetrics;
+    const metricDate = date ? new Date(date) : new Date();
+    const metricDay = metricDate.toISOString().slice(0, 10);
     try {
-      const existingUserChallenge = await this.userChallengeModel.findOne({ userId });
-        if (!existingUserChallenge) {
-          throw new NotFoundException('User challenge not found');
-        }
-        const existingChallenge = await this.challengeModel.findById(existingUserChallenge.challengeId);
+      const activeUserChallenge = await this.userChallengeModel
+      .findOne({ userId })
+      .populate({
+        path: 'challengeId',
+        match: {
+          type,
+          startDate: { $lte: metricDate },
+          endDate: { $gte: metricDate },
+        },
+      })
+      .exec();
+
+      if (!activeUserChallenge || !activeUserChallenge.challengeId) {
+        return null;
+      }
+        const existingChallenge = activeUserChallenge.challengeId
         if (!existingChallenge) {
           throw new NotFoundException('Challenge not found');
         }
-      if (existingChallenge.goalType === ChallengeType.DAILY &&
-          existingChallenge.dailyGoal !== undefined &&
-          existingChallenge.requiredDays !== undefined){
-          const allMetrics = await this.healthMetricModel.find({
-            userId,
-            type: existingChallenge.type,
-            date: { $gte: existingChallenge.startDate, $lte: existingChallenge.endDate }
-          }).exec();
-          const daysMap = new Map(); // key: YYYY-MM-DD, value: suma del día
+        const dayStart = new Date(metricDay + "T00:00:00Z");
+        const dayEnd = new Date(metricDay + "T23:59:59Z");
 
-          for (const metric of allMetrics) {
-            const day = metric.date.toISOString().slice(0, 10);
-            daysMap.set(day, (daysMap.get(day) || 0) + metric.value);
-          }
+        const dayMetrics = await this.healthMetricModel.find({
+          userId,
+          type,
+          date: { $gte: dayStart, $lte: dayEnd },
+        }).exec();
 
-          const daysReachedGoal = Array.from(daysMap.values())
-            .filter((value) => value >= existingChallenge.dailyGoal!)
-            .length;
+        if (!dayMetrics.length) {
+          return null;
+        }
 
-          const progress = (daysReachedGoal / existingChallenge.requiredDays) * 100;
+    // Sumar las métricas del día
+    const dayTotal = dayMetrics.reduce((sum, m) => sum + m.value, 0);
+      if (
+      existingChallenge["goalType"] === ChallengeType.DAILY &&
+      existingChallenge["dailyGoal"] !== undefined &&
+      existingChallenge["requiredDays"] !== undefined
+    ) {
+      // Obtener todas las métricas dentro del rango del reto
+      const allMetrics = await this.healthMetricModel.find({
+        userId,
+        type,
+        date: { $gte: existingChallenge["startDate"], $lte: existingChallenge["endDate"] },
+      }).exec();
 
-          const updateObj = {
-            total: daysReachedGoal,
-            progress: progress > 100 ? 100 : progress,
-          };
+      const daysMap = new Map<string, number>();
+      for (const metric of allMetrics) {
+        const day = metric.date.toISOString().slice(0, 10);
+        daysMap.set(day, (daysMap.get(day) || 0) + metric.value);
+      }
 
-          if (daysReachedGoal >= existingChallenge.requiredDays) {
-            updateObj["completedAt"] = new Date();
-          }
+      const daysReachedGoal = Array.from(daysMap.values())
+        .filter((val) => val >= existingChallenge["dailyGoal"]!)
+        .length;
 
-          return await this.userChallengeModel.findByIdAndUpdate( existingUserChallenge._id, updateObj, { new: true }).exec();
-      } else {
-        const newUserTotal = existingUserChallenge.total + value;
-        let newUserProgress = (newUserTotal / existingChallenge.goal) * 100;
-        const updateObj = {
+      const progress = (daysReachedGoal / existingChallenge["requiredDays"]) * 100;
+
+      const updateObj: any = {
+        total: daysReachedGoal,
+        progress: progress > 100 ? 100 : progress,
+      };
+
+      if (daysReachedGoal >= existingChallenge["requiredDays"]) {
+        updateObj.completedAt = activeUserChallenge.completedAt ?? new Date();
+      }
+
+      return this.userChallengeModel.findByIdAndUpdate(
+        activeUserChallenge._id,
+        updateObj,
+        { new: true },
+      ).exec();
+    } else {
+        const newUserTotal = activeUserChallenge.total + dayTotal;
+        let newUserProgress = (newUserTotal / existingChallenge["goal"]) * 100;
+
+        const updateObj: any = {
           total: newUserTotal,
-          progress: newUserProgress
-        }
+          progress: newUserProgress > 100 ? 100 : newUserProgress,
+        };
+
         if (newUserProgress >= 100) {
-          newUserProgress = 100;
-          updateObj["completedAt"] = new Date();
+          updateObj.completedAt = activeUserChallenge.completedAt ?? new Date();
         }
-        return await this.userChallengeModel.findByIdAndUpdate(existingUserChallenge._id, updateObj, { new: true }).exec();
+
+        return this.userChallengeModel.findByIdAndUpdate(
+          activeUserChallenge._id,
+          updateObj,
+          { new: true },
+        ).exec();
       }
     } catch (error) {
       throw new HttpException('Error updating user challenge', error);
