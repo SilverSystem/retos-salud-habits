@@ -27,7 +27,8 @@ import { UserChallenge, UserChallengeSchema } from './models/userChallenge.schem
     }),
     MongooseModule.forRootAsync({
       useFactory: (configService: ConfigService) => ({
-        uri: `mongodb://${configService.get('MONGO_USERNAME')}:${configService.get('MONGO_PASSWORD')}@${configService.get('DB_HOST')}:${configService.get('DB_PORT')}`,
+        uri:`mongodb://${configService.get('MONGO_USERNAME')}:${configService.get('MONGO_PASSWORD')}@${configService.get('DB_HOST')}:${configService.get('DB_PORT')}`,
+        dbName: configService.get('MONGO_DB_NAME')
       }),
       inject: [ConfigService],
     }),
