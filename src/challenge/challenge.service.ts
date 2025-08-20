@@ -49,7 +49,7 @@ export class ChallengeService {
 
   async findAll() {
     try {
-      return await this.challengeModel.find({ startDate: { $lte: new Date() }, endDate: { $gte: new Date() } }).exec();
+      return await this.challengeModel.find().exec();
     } catch (error) {
       throw new HttpException('Error fetching challenges', error);
     }

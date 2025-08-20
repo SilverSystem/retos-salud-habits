@@ -19,6 +19,7 @@ services:
       REDIS_PORT: ${REDIS_PORT}
       MONGO_USERNAME: ${MONGO_USERNAME}
       MONGO_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_DB_NAME: ${MONGO_DB_NAME}
     networks:
       - capi_public_network
       - capi_private_network
