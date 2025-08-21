@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService} from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ChallengeModule } from './challenge/challenge.module';
@@ -10,6 +10,7 @@ import { Challenge, ChallengeSchema } from './models/challenge.schema';
 import { HealthMetric, HealthMetricSchema } from './models/healthMetric.schema';
 import { User, UserSchema } from './models/user.schema';
 import { UserChallenge, UserChallengeSchema } from './models/userChallenge.schema';
+import { NormalizeDatesMiddleware } from './middlewares/normalize-dates.middleware';
 @Module({
   imports: [
     ConfigModule.forRoot({isGlobal: true}),
@@ -44,4 +45,8 @@ import { UserChallenge, UserChallengeSchema } from './models/userChallenge.schem
   ],
   providers: [HealthMetricWorker],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(NormalizeDatesMiddleware).forRoutes('*');
+  }
+}

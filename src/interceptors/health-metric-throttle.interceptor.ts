@@ -26,7 +26,11 @@ export class HealthMetricThrottleInterceptor implements NestInterceptor {
       jobId: jobKey,
       removeOnComplete: true,
       removeOnFail: true,
-      attempts: 1,
+      attempts: 3,
+      backoff: {
+        type: 'exponential',
+        delay: 3000
+      },
     };
 
     return from(
